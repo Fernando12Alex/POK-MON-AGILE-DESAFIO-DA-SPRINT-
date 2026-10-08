@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokémon Agile - Desafio da Sprint</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:linear-gradient(135deg,#101820,#1d3557);display:flex;justify-content:center;align-items:center;padding:15px}
+#game{width:100%;max-width:680px;background:#f4f4f4;color:#222;border-radius:20px;overflow:hidden;box-shadow:0 15px 40px #0008}
+header{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;text-align:center;padding:20px}
+header h1{margin:0;font-size:28px} header p{margin:6px 0 0}
+main{padding:20px}
+#inicio{text-align:center}
+.logo{font-size:65px}
+#inicio h2{color:#2563eb}
+#inicio p{line-height:1.6;color:#555}
+button{font-family:inherit}
+.btn-principal{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border:0;border-radius:10px;padding:15px 30px;font-size:18px;font-weight:bold;cursor:pointer;margin-top:12px}
+.btn-principal:hover{transform:scale(1.03)}
+#jogo,#resultado{display:none}
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}
+.status div{background:#fff;border-radius:10px;padding:10px;text-align:center;box-shadow:0 2px 8px #0002}
+.status strong{display:block;font-size:20px;margin-top:5px}
+.barra{height:14px;background:#ddd;border-radius:20px;overflow:hidden;margin:8px 0 20px}
+#progresso{height:100%;width:0;background:#22c55e;transition:.4s}
+.desafio{background:#fff;border-radius:15px;padding:20px;box-shadow:0 3px 12px #0002}
+.tag{display:inline-block;background:#dbeafe;color:#1d4ed8;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:bold}
+.desafio h2{margin:12px 0 8px}
+.pergunta{font-size:18px;line-height:1.5;margin-bottom:18px}
+.opcoes{display:flex;flex-direction:column;gap:10px}
+.opcao{border:2px solid #ddd;background:#fafafa;padding:14px;border-radius:10px;text-align:left;cursor:pointer;font-size:15px}
+.opcao:hover{border-color:#2563eb;background:#eff6ff}
+.opcao:disabled{cursor:not-allowed;opacity:.75}
+#feedback{display:none;margin-top:15px;padding:15px;border-radius:10px}
+.certo{background:#dcfce7;border:2px solid #22c55e}
+.errado{background:#fee2e2;border:2px solid #ef4444}
+#feedback h3{margin-top:0}
+#proximo{display:none;width:100%;margin-top:15px;background:#111827;color:white;border:0;padding:14px;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}
+#resultado{text-align:center}
+.trofeu{font-size:65px}
+.nota{font-size:42px;font-weight:bold;color:#7c3aed}
+.resultado-box{background:#fff;border-radius:12px;padding:15px;margin:10px 0}
+@media(max-width:500px){.pergunta{font-size:16px}.status{gap:5px}}
+</style>
+</head>
+<body>
+<div id="game">
+<header>
+<h1>⚡ Pokémon Agile</h1>
+<p>Desafio de Gerenciamento de Projetos</p>
+</header>
+
+<main>
+<section id="inicio">
+<div class="logo">🎮</div>
+<h2>Desafio da Sprint</h2>
+<p>Você será responsável por tomar decisões durante uma Sprint. Suas escolhas afetam a produtividade, a energia da equipe e sua pontuação.</p>
+<p><strong>Objetivo:</strong> entregar a Sprint com qualidade evitando aumento de escopo, excesso de trabalho e falta de planejamento.</p>
+<button id="btnIniciar" class="btn-principal">🚀 Iniciar Sprint</button>
+</section>
+
+<section id="jogo">
+<div class="status">
+<div>⭐ Pontos<strong id="pontos">0</strong></div>
+<div>❤️ Energia<strong id="energia">100</strong></div>
+<div>📋 Desafio<strong id="numero">1/8</strong></div>
+</div>
+<strong>Progresso da Sprint</strong>
+<div class="barra"><div id="progresso"></div></div>
+
+<div class="desafio">
+<span class="tag" id="categoria">SCRUM</span>
+<h2 id="titulo"></h2>
+<div class="pergunta" id="pergunta"></div>
+<div class="opcoes" id="opcoes"></div>
+
+<div id="feedback">
+<h3 id="resultadoFeedback"></h3>
+<div id="explicacao"></div>
+</div>
+
+<button id="proximo">Próximo desafio ➜</button>
+</div>
+</section>
+
+<section id="resultado">
+<div class="trofeu">🏆</div>
+<h2>Sprint Finalizada!</h2>
+<p id="mensagemFinal"></p>
+<div class="resultado-box">Pontuação final<div class="nota" id="pontuacaoFinal">0</div></div>
+<div class="resultado-box">❤️ Energia restante: <strong id="energiaFinal">0</strong></div>
+<div class="resultado-box">📊 Desafios acertados: <strong id="acertosFinal">0/8</strong></div>
+<button id="btnReiniciar" class="btn-principal">🔄 Jogar novamente</button>
+</section>
+</main>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+let pontos=0, energia=100, atual=0, acertos=0;
+
+const desafios=[
+["SCRUM","Aumento de Escopo","Durante a Sprint, o cliente pede uma nova funcionalidade que não estava planejada. O que você deve fazer?",["Adicionar imediatamente.","Conversar sobre a demanda e colocá-la no Product Backlog para priorização.","Cancelar as tarefas atuais.","Ignorar o cliente."],1,"Novas demandas devem ser analisadas e priorizadas no Product Backlog."],
+["KANBAN","Excesso de Trabalho","A equipe já possui muitas tarefas em andamento e alguém sugere começar mais três. Qual é a melhor decisão?",["Começar todas.","Aumentar o número de tarefas.","Controlar o WIP e finalizar tarefas antes de iniciar novas.","Parar o projeto."],2,"Limitar o WIP ajuda a manter o fluxo e evita sobrecarga."],
+["DAILY SCRUM","Impedimento","Durante a Daily, um desenvolvedor informa que está bloqueado por um problema técnico. O que fazer?",["Ignorar.","Identificar o impedimento e buscar uma solução.","Mandar para outra tarefa sem investigar.","Esperar o fim da Sprint."],1,"A Daily ajuda a identificar impedimentos e alinhar o trabalho."],
+["PRIORIZAÇÃO","Backlog","Existem dez funcionalidades, mas a equipe só consegue trabalhar em três. O que deve orientar a escolha?",["As mais fáceis.","Aleatoriamente.","As de maior valor para o produto.","As mais antigas sem analisar valor."],2,"A priorização deve considerar o valor entregue ao produto e aos usuários."],
+["QUALIDADE","Bug Crítico","Um bug crítico foi encontrado antes da entrega. Qual deve ser a atitude?",["Ignorar.","Corrigir considerando prioridade e impacto.","Apagar o bug.","Criar novas funcionalidades primeiro."],1,"Problemas críticos podem comprometer a qualidade e devem ser tratados."],
+["PLANEJAMENTO","Capacidade da Equipe","A equipe possui capacidade limitada, mas querem adicionar muitas tarefas. O que fazer?",["Aceitar todas.","Considerar a capacidade e planejar uma quantidade realista.","Exigir horas extras.","Aumentar a Sprint sem planejamento."],1,"O planejamento deve considerar a capacidade real da equipe."],
+["RETROSPECTIVA","Melhoria Contínua","A Sprint terminou e houve vários problemas. O que fazer na retrospectiva?",["Procurar culpados.","Ignorar.","Analisar o ocorrido e definir melhorias para a próxima Sprint.","Cancelar a próxima Sprint."],2,"A retrospectiva busca identificar melhorias para o próximo ciclo."],
+["SCRUM","Entrega de Valor","Ao final da Sprint, qual deve ser o principal objetivo?",["Mostrar horas trabalhadas.","Entregar um incremento que gere valor e atenda aos critérios definidos.","Adicionar muitas tarefas.","Apresentar sem verificar qualidade."],1,"O foco é produzir um incremento utilizável que gere valor."]
+];
+
+const $=id=>document.getElementById(id);
+
+function iniciar(){
+pontos=0; energia=100; atual=0; acertos=0;
+$("inicio").style.display="none";
+$("resultado").style.display="none";
+$("jogo").style.display="block";
+carregar();
+}
+
+function carregar(){
+const d=desafios[atual];
+$("numero").textContent=(atual+1)+"/"+desafios.length;
+$("categoria").textContent=d[0];
+$("titulo").textContent=d[1];
+$("pergunta").textContent=d[2];
+$("pontos").textContent=pontos;
+$("energia").textContent=energia;
+$("progresso").style.width=(atual/desafios.length*100)+"%";
+$("feedback").style.display="none";
+$("proximo").style.display="none";
+$("opcoes").innerHTML="";
+
+d[3].forEach((texto,i)=>{
+const b=document.createElement("button");
+b.className="opcao";
+b.textContent=String.fromCharCode(65+i)+") "+texto;
+b.addEventListener("click",()=>responder(i));
+$("opcoes").appendChild(b);
+});
+}
+
+function responder(escolha){
+const d=desafios[atual];
+document.querySelectorAll(".opcao").forEach(b=>b.disabled=true);
+$("feedback").style.display="block";
+
+if(escolha===d[4]){
+pontos+=100; acertos++; energia=Math.min(100,energia+5);
+$("resultadoFeedback").textContent="✅ Excelente decisão! +100 pontos";
+$("feedback").className="certo";
+}else{
+pontos=Math.max(0,pontos-50); energia-=10;
+$("resultadoFeedback").textContent="❌ Essa decisão não foi a melhor. -50 pontos";
+$("feedback").className="errado";
+}
+$("explicacao").textContent=d[5];
+$("pontos").textContent=pontos;
+$("energia").textContent=Math.max(0,energia);
+$("proximo").style.display="block";
+if(energia<=0)$("proximo").textContent="Finalizar Sprint";
+}
+
+function proximo(){
+if(energia<=0){finalizar();return}
+atual++;
+if(atual>=desafios.length) finalizar();
+else carregar();
+}
+
+function finalizar(){
+$("jogo").style.display="none";
+$("resultado").style.display="block";
+$("pontuacaoFinal").textContent=pontos;
+$("energiaFinal").textContent=Math.max(0,energia);
+$("acertosFinal").textContent=acertos+"/"+desafios.length;
+
+if(pontos>=700)$("mensagemFinal").textContent="🏆 Excelente! Você demonstrou ótimo conhecimento de Agile.";
+else if(pontos>=500)$("mensagemFinal").textContent="👏 Muito bom! Você tomou boas decisões durante a Sprint.";
+else if(pontos>=300)$("mensagemFinal").textContent="📚 Bom começo! Alguns conceitos ainda podem ser aprimorados.";
+else $("mensagemFinal").textContent="💡 A Sprint foi difícil. Revise Scrum, Kanban, WIP e Backlog.";
+}
+
+$("btnIniciar").addEventListener("click",iniciar);
+$("proximo").addEventListener("click",proximo);
+$("btnReiniciar").addEventListener("click",iniciar);
+
+});
+</script>
+</body>
+</html>
